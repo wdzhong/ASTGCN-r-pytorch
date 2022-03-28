@@ -1,3 +1,4 @@
+import enum
 import os
 import numpy as np
 import argparse
@@ -107,6 +108,14 @@ def get_sample_indices(data_sequence, num_of_weeks, num_of_days, num_of_hours,
     return week_sample, day_sample, hour_sample, target
 
 
+def load_way_ids(way_ids_file):
+    way_ids = []
+    with open(way_ids_file, 'r') as fp:
+        for line in fp.readlines():
+            way_ids.append(int(line.rstrip()))
+    return way_ids
+
+
 def read_and_generate_dataset(graph_signal_matrix_filename,
                                                      num_of_weeks, num_of_days,
                                                      num_of_hours, num_for_predict,
@@ -128,6 +137,16 @@ def read_and_generate_dataset(graph_signal_matrix_filename,
             shape is (num_of_samples, num_of_vertices, num_for_predict)
     '''
     data_seq = np.load(graph_signal_matrix_filename)['data']  # (sequence_length, num_of_vertices, num_of_features)
+
+    # wd: get the indices of way ids for sub graphs
+    way_ids_file = "./data/NFTA/way_ids.txt"
+    way_ids_sub_file = "./data/NFTA/way_ids_6.txt"
+    all_way_ids = load_way_ids(way_ids_file)
+    way_ids_sublist = load_way_ids(way_ids_sub_file)
+
+    id_and_indices = {way_id: index for index, way_id in enumerate(all_way_ids)}
+    indices = [id_and_indices[way_id] for way_id in way_ids_sublist]
+    data_seq = data_seq[:, indices, :]
 
     all_samples = []
     for idx in range(data_seq.shape[0]):
